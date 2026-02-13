@@ -345,10 +345,10 @@ select {
   border-top: 2px solid #f1f5f9;
 }
 
-.team-stats h3 {
+.team-stats h2 {
   color: #64748b;
-  font-size: 16px;
-  margin-bottom: 20px;
+  font-size: 24px;
+  margin-bottom: 24px;
 }
 
 .teams-grid {
