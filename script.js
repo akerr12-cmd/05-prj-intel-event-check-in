@@ -26,6 +26,13 @@ let waterCount = 0;
 let zeroCount = 0;
 let powerCount = 0;
 
+// Track the attendee number when each team reaches a count
+let teamMilestones = {
+  water: {},
+  zero: {},
+  power: {}
+};
+
 // Function to save data to localStorage
 function saveDataToStorage() {
   const data = {
@@ -33,7 +40,8 @@ function saveDataToStorage() {
     waterCount: waterCount,
     zeroCount: zeroCount,
     powerCount: powerCount,
-    attendeeList: attendeeList
+    attendeeList: attendeeList,
+    teamMilestones: teamMilestones
   };
   localStorage.setItem('checkInData', JSON.stringify(data));
 }
@@ -48,6 +56,11 @@ function loadDataFromStorage() {
     zeroCount = data.zeroCount;
     powerCount = data.powerCount;
     attendeeList = data.attendeeList;
+    teamMilestones = data.teamMilestones || {
+      water: {},
+      zero: {},
+      power: {}
+    };
 
     // Update the page with loaded data
     document.getElementById('attendeeCount').textContent = attendeeCount;
@@ -105,6 +118,11 @@ function resetAllData() {
   zeroCount = 0;
   powerCount = 0;
   attendeeList = [];
+  teamMilestones = {
+    water: {},
+    zero: {},
+    power: {}
+  };
 
   // Update the page with reset values
   document.getElementById('attendeeCount').textContent = 0;
@@ -175,12 +193,21 @@ checkInForm.addEventListener('submit', function(event) {
   if (selectedTeam === 'water') {
     waterCount = waterCount + 1;
     document.getElementById('waterCount').textContent = waterCount;
+    if (!teamMilestones.water[waterCount]) {
+      teamMilestones.water[waterCount] = attendeeCount;
+    }
   } else if (selectedTeam === 'zero') {
     zeroCount = zeroCount + 1;
     document.getElementById('zeroCount').textContent = zeroCount;
+    if (!teamMilestones.zero[zeroCount]) {
+      teamMilestones.zero[zeroCount] = attendeeCount;
+    }
   } else if (selectedTeam === 'power') {
     powerCount = powerCount + 1;
     document.getElementById('powerCount').textContent = powerCount;
+    if (!teamMilestones.power[powerCount]) {
+      teamMilestones.power[powerCount] = attendeeCount;
+    }
   }
 
   // Display the success message with name and team
@@ -208,17 +235,37 @@ checkInForm.addEventListener('submit', function(event) {
 
   // Check if the goal is reached (20 attendees)
   if (attendeeCount === 20) {
-    // Find which team has the most attendees
+    // Find which team has the most attendees (earliest to reach max wins ties)
     let winningTeam = '';
     let maxCount = Math.max(waterCount, zeroCount, powerCount);
+    let tiedTeams = [];
 
     if (maxCount === waterCount) {
-      winningTeam = 'Team Water Wise';
-    } else if (maxCount === zeroCount) {
-      winningTeam = 'Team Net Zero';
-    } else if (maxCount === powerCount) {
-      winningTeam = 'Team Renewables';
+      tiedTeams.push('water');
     }
+
+    if (maxCount === zeroCount) {
+      tiedTeams.push('zero');
+    }
+
+    if (maxCount === powerCount) {
+      tiedTeams.push('power');
+    }
+
+    let winningTeamKey = tiedTeams[0];
+    let earliestReach = teamMilestones[winningTeamKey][maxCount];
+
+    for (let i = 1; i < tiedTeams.length; i++) {
+      let teamKey = tiedTeams[i];
+      let teamReach = teamMilestones[teamKey][maxCount];
+
+      if (teamReach < earliestReach) {
+        earliestReach = teamReach;
+        winningTeamKey = teamKey;
+      }
+    }
+
+    winningTeam = teamLabels[winningTeamKey];
 
     // Show the modal backdrop
     const modalBackdrop = document.getElementById('modalBackdrop');
